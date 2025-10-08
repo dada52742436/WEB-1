@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateToken } from '@/lib/jwt';
-import { findUserByUsername, findUserByEmail, addUser } from '@/lib/mockDb';
+import { createUser } from "@/lib/auth-service";
 
 export async function POST(request) {
   try {
@@ -15,52 +15,35 @@ export async function POST(request) {
       );
     }
 
-    // Check for existing user using shared DB
-    if (findUserByUsername(username)) {
-      console.log('❌ Username already exists:', username);
-      return NextResponse.json(
-        { error: 'Username already exists' },
-        { status: 409 }
-      );
-    }
-
-    if (findUserByEmail(email)) {
-      console.log('❌ Email already registered:', email);
-      return NextResponse.json(
-        { error: 'Email already registered' },
-        { status: 409 }
-      );
-    }
-
-    // Create user using shared DB
-    const newUser = addUser({
+    // Create user - createUser already checks for existing users
+    const newUser = await createUser({
       username,
       email,
-      password, // Note: In production, hash the password
+      password,
     });
 
     console.log('✅ New user created:', newUser.username);
 
     // Generate token
     const token = generateToken({
+      userId: newUser.id,
       username: newUser.username,
       email: newUser.email
     });
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = newUser;
-
     return NextResponse.json({
       message: 'Registration successful',
-      user: userWithoutPassword,
+      user: newUser,
       token
     }, { status: 201 });
 
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Return specific error message from createUser
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: error.message || 'Registration failed' },
+      { status: 400 }
     );
   }
 }

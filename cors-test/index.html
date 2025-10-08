@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test Client</title>
+</head>
+<body>
+    <h1>CORS Test - 跨域测试</h1>
+    
+    <div>
+        <h2>测试登录API</h2>
+        <button onclick="testLogin()">测试跨域登录</button>
+        <button onclick="testLoginWithCredentials()">测试带credentials的跨域登录</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // 目标：从localhost:8080向localhost:3000发送请求
+        const API_BASE = 'http://localhost:3000/api';
+        
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>测试中...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'demo',
+                        password: 'password123'
+                    })
+                    // 注意：没有credentials: 'include'
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <h3>✅ 成功（无credentials）</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>❌ CORS错误（无credentials）</h3>
+                    <p style="color: red;">${error.message}</p>
+                    <p>这就是CORS阻止跨域请求的表现！</p>
+                `;
+            }
+        }
+        
+        async function testLoginWithCredentials() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>测试中...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'demo',
+                        password: 'password123'
+                    }),
+                    credentials: 'include'  // 这会触发更严格的CORS检查
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <h3>✅ 成功（带credentials）</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>❌ CORS错误（带credentials）</h3>
+                    <p style="color: red;">${error.message}</p>
+                    <p>credentials: 'include' 需要更严格的CORS设置！</p>
+                `;
+            }
+        }
+        
+        // 测试简单请求 vs 预检请求
+        async function testPreflightRequest() {
+            try {
+                await fetch(`${API_BASE}/auth/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer some-token',  // 自定义header会触发预检
+                        'X-Custom-Header': 'test'  // 自定义header
+                    }
+                });
+            } catch (error) {
+                console.log('Preflight request failed:', error);
+            }
+        }
+    </script>
+</body>
+</html>

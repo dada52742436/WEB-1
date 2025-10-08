@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateToken } from '@/lib/jwt';
-import { findUserByUsername } from '@/lib/mockDb';
+import { authenticateUser } from "@/lib/auth-service";
 
 export async function POST(request) {
   try {
@@ -15,38 +14,20 @@ export async function POST(request) {
       );
     }
 
-    // Find user using shared DB
-    const user = findUserByUsername(username);
-    console.log('User found:', user ? user.username : 'None');
-    
-    if (!user || user.password !== password) {
-      console.log('❌ Invalid credentials');
-      return NextResponse.json(
-        { error: 'Invalid username or password' },
-        { status: 401 }
-      );
-    }
-
-    // Generate token
-    const token = generateToken({
-      username: user.username,
-      email: user.email
-    });
-
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    // 用户认证 - authenticateUser already handles everything
+    const result = await authenticateUser({ username, password });
 
     return NextResponse.json({
       message: 'Login successful',
-      user: userWithoutPassword,
-      token
+      user: result.user,
+      token: result.token
     });
 
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: error.message || 'Login failed' },
+      { status: 401 }
     );
   }
 }

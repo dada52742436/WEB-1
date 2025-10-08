@@ -41,6 +41,7 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+
 /**
  * Async thunk for user registration
  * Handles API call and error handling for registration process
@@ -69,6 +70,39 @@ export const registerUser = createAsyncThunk(
     }
   }
 );
+
+// 添加到现有的 authSlice.js 文件中
+
+/**
+ * Async thunk for user logout
+ */
+export const logoutUser = createAsyncThunk(
+  "auth/logout",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const { token } = getState().auth;
+
+      if (token) {
+        const response = await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          return rejectWithValue(data.error || "Logout failed");
+        }
+      }
+
+      return {};
+    } catch (error) {
+      return rejectWithValue(error.message || "Network error");
+    }
+  }
+);
+
 
 /**
  * Async thunk for checking authentication status
@@ -127,7 +161,7 @@ const authSlice = createSlice({
      * Logout action - clears user data and authentication state
      */
     logout: (state) => {
-      state.user = null;
+      state.user = null; 
       state.token = null;
       state.isAuthenticated = false;
       state.error = null;
@@ -238,7 +272,40 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.error = action.payload;
-      });
+      })
+      // Logout cases
+// 在 extraReducers 中添加
+      .addCase(logoutUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.error = null;
+
+        // 清除 localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('auth_user');
+        }
+      })
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+
+        // 即使登出失败，也清除本地状态
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('auth_user');
+        }
+      })
   },
 });
 
