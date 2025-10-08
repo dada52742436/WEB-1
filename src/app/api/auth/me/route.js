@@ -9,6 +9,7 @@ import { findUserByUsername } from '@/lib/mockDb';
 export async function GET(request) {
   try {
     console.log('🔐 GET /api/auth/me called');
+    console.log(request);
     
     const authHeader = request.headers.get('authorization');
     
