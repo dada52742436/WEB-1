@@ -286,10 +286,10 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.error = null;
 
-        // 清除 localStorage
+        // 清除 localStorage - 使用一致的key
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('auth_user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
         }
       })
       .addCase(logoutUser.rejected, (state, action) => {
@@ -302,8 +302,8 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
 
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('auth_user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
         }
       })
   },

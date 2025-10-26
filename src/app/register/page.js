@@ -110,7 +110,9 @@ export default function Register() {
       
       if (result.type.endsWith('fulfilled')) {//异步action 状态检查 也等于 (result.type === 'auth/register/fulfilled')
       
-        router.push('/dashboard');
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 100);
       }
     } catch (error) {
       // Error is already handled by Redux

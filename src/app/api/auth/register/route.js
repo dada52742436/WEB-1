@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateToken } from '@/lib/jwt';
-import { createUser } from "@/lib/auth-service";
+import { createUser, authenticateUser } from "@/lib/auth-service";
 
 export async function POST(request) {
   try {
@@ -24,17 +23,16 @@ export async function POST(request) {
 
     console.log('✅ New user created:', newUser.username);
 
-    // Generate token
-    const token = generateToken({
-      userId: newUser.id,
-      username: newUser.username,
-      email: newUser.email
+    // Authenticate the newly created user to create session
+    const authResult = await authenticateUser({
+      username,
+      password
     });
 
     return NextResponse.json({
       message: 'Registration successful',
-      user: newUser,
-      token
+      user: authResult.user,
+      token: authResult.token
     }, { status: 201 });
 
   } catch (error) {
